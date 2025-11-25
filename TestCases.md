@@ -1,4 +1,9 @@
-Test CasesThe following test suite verifies that the ChaosMiddleware correctly implements the four core requirements: Admin Immunity, Latency, Deterministic Failure, and Response Mutation.Python Test Suite (tests.py)from django.test import RequestFactory, TestCase
+Test Cases
+The following test suite verifies that the ChaosMiddleware correctly implements the four core requirements: Admin Immunity, Latency, Deterministic Failure, and Response Mutation.
+
+Python Test Suite (tests.py)
+
+from django.test import RequestFactory, TestCase
 from django.contrib.auth.models import User, AnonymousUser
 from django.http import JsonResponse
 import json

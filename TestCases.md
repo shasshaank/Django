@@ -1,10 +1,15 @@
-Test Cases
-The following test suite verifies that the ChaosMiddleware correctly implements the four core requirements: Admin Immunity, Latency, Deterministic Failure, and Response Mutation.
+# ChaosMiddleware Test Suite
 
-Python Test Suite (tests.py)
+This test suite verifies that the `ChaosMiddleware` correctly implements the four core requirements:
 
+1. **Admin Immunity**  
+2. **Simulated Latency**  
+3. **Deterministic Failure**  
+4. **Response Mutation**
 
+## `tests.py`
 
+```python
 # --- Mock View ---
 
 from django.test import RequestFactory, TestCase
@@ -32,15 +37,10 @@ class ChaosMiddlewareTest(TestCase):
         Superusers should bypass ALL chaos logic (latency, errors, etc.),
         even if chaos headers are present.
         """
-        # Create a request that WOULD fail for a normal user (Even path + Chaos Mode)
         request = self.factory.get('/evenpath', headers={'X-Chaos-Mode': '503'})
-        
-        # Create and attach a mock superuser
         request.user = User.objects.create_superuser('admin', 'admin@test.com', 'pass')
-        
+
         response = self.middleware(request)
-        
-        # Expectation: 200 OK (Bypassed the 503 error)
         self.assertEqual(response.status_code, 200)
 
     def test_simulated_latency(self):
@@ -55,12 +55,9 @@ class ChaosMiddlewareTest(TestCase):
         start_time = time.time()
         self.middleware(request)
         end_time = time.time()
-        
+
         duration = end_time - start_time
-        
-        # Expectation: Duration is at least 0.5s (allowing for small execution overhead)
         self.assertGreaterEqual(duration, 0.5)
-        # Sanity check: shouldn't be erroneously long (e.g., > 2s)
         self.assertLess(duration, 2.0)
 
     def test_deterministic_failure_even_path(self):
@@ -68,15 +65,10 @@ class ChaosMiddlewareTest(TestCase):
         Requirement 3a: Deterministic Failure (Even Path)
         If 'X-Chaos-Mode: 503' is set AND path length is EVEN -> Return 503.
         """
-        # '/123456' is length 7 (odd). '/12345' is length 6 (even).
-        
-        # Path: /12345 (Length 6 -> Even)
-        request = self.factory.get('/12345', headers={'X-Chaos-Mode': '503'})
+        request = self.factory.get('/12345', headers={'X-Chaos-Mode': '503'})  # even length
         request.user = AnonymousUser()
-        
+
         response = self.middleware(request)
-        
-        # Expectation: 503 Service Unavailable
         self.assertEqual(response.status_code, 503)
         self.assertEqual(json.loads(response.content)['error'], "Chaos Injected")
 
@@ -85,13 +77,10 @@ class ChaosMiddlewareTest(TestCase):
         Requirement 3b: Deterministic Failure (Odd Path)
         If 'X-Chaos-Mode: 503' is set AND path length is ODD -> Pass through.
         """
-        # Path: /1234 (Length 5 -> Odd)
-        request = self.factory.get('/1234', headers={'X-Chaos-Mode': '503'})
+        request = self.factory.get('/1234', headers={'X-Chaos-Mode': '503'})  # odd length
         request.user = AnonymousUser()
-        
+
         response = self.middleware(request)
-        
-        # Expectation: 200 OK (Normal processing)
         self.assertEqual(response.status_code, 200)
 
     def test_response_mutation(self):
@@ -101,15 +90,11 @@ class ChaosMiddlewareTest(TestCase):
         """
         request = self.factory.get('/', headers={'X-Chaos-Mutate': 'True'})
         request.user = AnonymousUser()
-        
+
         response = self.middleware(request)
-        
-        # Expectation: 200 OK
         self.assertEqual(response.status_code, 200)
-        
+
         content = json.loads(response.content)
-        
-        # Verify original data remains
         self.assertEqual(content['status'], 'ok')
-        # Verify injected key
-        self.assertTrue(content.get('chaos_active'), "Response should contain 'chaos_active': True")
+        self.assertTrue(content.get('chaos_active'))
+```

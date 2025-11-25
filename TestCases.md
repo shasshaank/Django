@@ -3,6 +3,10 @@ The following test suite verifies that the ChaosMiddleware correctly implements 
 
 Python Test Suite (tests.py)
 
+
+
+# --- Mock View ---
+
 from django.test import RequestFactory, TestCase
 from django.contrib.auth.models import User, AnonymousUser
 from django.http import JsonResponse
@@ -10,7 +14,6 @@ import json
 import time
 from project.middleware import ChaosMiddleware
 
-# --- Mock View ---
 def mock_view_success(request):
     """
     A simple mock view that returns a standard JSON response.
